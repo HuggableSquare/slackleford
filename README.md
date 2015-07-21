@@ -12,6 +12,11 @@ your first job is:
 then, your second job is to create a realtime messaging api bot on your slack team and get the api key  
 once that's done plug it into the script appropriately  
 other than that just make sure you have a "#mumble" channel on your slack team for the bot to message into  
+and then, run the bot using this syntax:
+
+    ruby slackleford.rb mumbleserver_host mumbleserver_port mumbleserver_username mumbleserver_userpassword mumbleserver_targetchannel
+
+I would recommend using tmux/screen to run the bot like a daemon
 
 dependencies
 ---------
