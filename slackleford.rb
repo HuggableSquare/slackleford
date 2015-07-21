@@ -3,8 +3,10 @@
 # Syntax
 # ruby slackleford.rb mumbleserver_host mumbleserver_port mumbleserver_username mumbleserver_userpassword mumbleserver_targetchannel
 
-require "mumble-ruby"
 require 'rubygems'
+require 'bundler/setup'
+
+require 'mumble-ruby'
 require 'slack'
 
 class MumbleSlack
