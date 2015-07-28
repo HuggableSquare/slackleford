@@ -28,6 +28,8 @@ GEM
       opus-ruby
       ruby_protobuf
       wavefile
+    net (0.2.1)
+      activesupport
     opus-ruby (1.0.1)
       ffi
     ruby_protobuf (0.4.11)
@@ -48,8 +50,7 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
+  json
   mumble-ruby
+  net
   slack-api
-
-BUNDLED WITH
-   1.10.5

@@ -11,6 +11,11 @@ your first job is:
 
 then, your second job is to create a realtime messaging api bot on your slack team and get the api key  
 once that's done plug it into the script appropriately  
+after that, if you want embedded images to display in slack, you need an imgur api key  
+plug that into the script also and make sure to change the line to  
+
+    IMGUR_ENABLE = 1 # IMPORTANT (0 = NO, 1 = YES)
+
 other than that just make sure you have a "#mumble" channel on your slack team for the bot to message into  
 and then, run the bot using this syntax:
 
@@ -27,4 +32,3 @@ dependencies
 TODO
 -----
 - make a better readme
-- fix image base64 issue

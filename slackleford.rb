@@ -6,10 +6,27 @@
 require 'rubygems'
 require 'bundler/setup'
 
+require 'net/http'
+require 'net/https'
+require 'open-uri'
+require 'json'
 require 'mumble-ruby'
 require 'slack'
 
 class MumbleSlack
+  IMGUR_ENABLE = 0 # IMPORTANT (0 = NO, 1 = YES)
+  API_URI = URI.parse('https://api.imgur.com')
+  API_PUBLIC_KEY = 'Client-ID put client-id here' # IMPORANT
+
+  ENDPOINTS = {:image => '/3/image'}
+
+  def imgur_web_client
+    http = Net::HTTP.new(API_URI.host, API_URI.port)
+    http.use_ssl = true
+    http.verify_mode = OpenSSL::SSL::VERIFY_NONE
+    http
+  end
+
   def initialize
     @sv_art
     @sv_alb
@@ -25,8 +42,9 @@ class MumbleSlack
       conf.username = @mumbleserver_username
       conf.password = @mumbleserver_userpassword
     end
+
     Slack.configure do |config|
-      config.token = "put api key here"
+      config.token = "put api key here" # IMPORTANT
     end
     @client = Slack.realtime
 	
@@ -39,6 +57,23 @@ class MumbleSlack
         when /<a href="(.*)">/i
           nolinkmsg = message.match(/<a href="(.*)">/i)
           Slack.chat_postMessage username: "#{@cli.users[msg.actor].name}", channel: "\#mumble", text: "#{nolinkmsg[1]}"
+        when /base64,(.*)"\/>/i
+          if IMGUR_ENABLE == 1
+            img = message.match(/base64,(.*)"\/>/i)[1]
+            img.gsub!("%2F", '/')
+            img.gsub!("%2B", '+')
+
+            params = {:image => "#{img}"}
+
+            request = Net::HTTP::Post.new(API_URI.request_uri + ENDPOINTS[:image])
+            request.set_form_data(params)
+            request.add_field('Authorization', API_PUBLIC_KEY)
+
+            response = imgur_web_client.request(request)
+            Slack.chat_postMessage username: "#{@cli.users[msg.actor].name}", channel: "\#mumble", text: JSON.parse(response.body)['data']['link']
+          elsif IMGUR_ENABLE == 0
+            Slack.chat_postMessage username: "#{@cli.users[msg.actor].name}", channel: "\#mumble", text: "Embedded image cannot be displayed."
+          end
         else
           Slack.chat_postMessage username: "#{@cli.users[msg.actor].name}", channel: "\#mumble", text: "#{message}"
         end
