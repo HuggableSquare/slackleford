@@ -98,7 +98,10 @@ class MumbleSlack
           usermessage << "#{channeldata[0]}\n"
           usermessage << "\t#{channeldata[1].join(", ")}\n"
         end
-        Slack.chat_postMessage username: "#{@mumbleserver_username}", channel: data['user'], text: "#{usermessage}"
+        begin
+          Slack.chat_postMessage username: "#{@mumbleserver_username}", channel: data['user'], text: "#{usermessage}"
+        rescue
+        end
       end
     end
   end
