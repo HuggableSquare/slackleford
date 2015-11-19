@@ -56,7 +56,7 @@ class MumbleSlack
         case message
         when /<a href="(.*)">/i
           nolinkmsg = message.match(/<a href="(.*)">/i)
-          Slack.chat_postMessage username: "#{@cli.users[msg.actor].name}", channel: "\#mumble", text: "#{nolinkmsg[1]}"
+          Slack.chat_postMessage username: "#{@cli.users[msg.actor].name}", channel: "\#mumble", text: "#{nolinkmsg[1]}", icon_url: "http://wiki.mumble.info/logo.png"
         when /base64,(.*)"\/>/i
           if IMGUR_ENABLE == 1
             img = message.match(/base64,(.*)"\/>/i)[1]
@@ -70,12 +70,12 @@ class MumbleSlack
             request.add_field('Authorization', API_PUBLIC_KEY)
 
             response = imgur_web_client.request(request)
-            Slack.chat_postMessage username: "#{@cli.users[msg.actor].name}", channel: "\#mumble", text: JSON.parse(response.body)['data']['link']
+            Slack.chat_postMessage username: "#{@cli.users[msg.actor].name}", channel: "\#mumble", text: JSON.parse(response.body)['data']['link'], icon_url: "http://wiki.mumble.info/logo.png"
           elsif IMGUR_ENABLE == 0
-            Slack.chat_postMessage username: "#{@cli.users[msg.actor].name}", channel: "\#mumble", text: "Embedded image cannot be displayed."
+            Slack.chat_postMessage username: "#{@cli.users[msg.actor].name}", channel: "\#mumble", text: "Embedded image cannot be displayed.", icon_url: "http://wiki.mumble.info/logo.png"
           end
         else
-          Slack.chat_postMessage username: "#{@cli.users[msg.actor].name}", channel: "\#mumble", text: "#{message}"
+          Slack.chat_postMessage username: "#{@cli.users[msg.actor].name}", channel: "\#mumble", text: "#{message}", icon_url: "http://wiki.mumble.info/logo.png"
         end
       end
     end
@@ -99,7 +99,7 @@ class MumbleSlack
           usermessage << "\t#{channeldata[1].join(", ")}\n"
         end
         begin
-          Slack.chat_postMessage username: "#{@mumbleserver_username}", channel: data['user'], text: "#{usermessage}"
+          Slack.chat_postMessage username: "#{@mumbleserver_username}", channel: data['user'], text: "#{usermessage}", icon_url: "http://wiki.mumble.info/logo.png"
         rescue
         end
       end
