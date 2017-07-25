@@ -1,10 +1,7 @@
 #!/usr/bin/env ruby
 
 # Syntax
-# ruby slackleford.rb mumbleserver_host mumbleserver_port mumbleserver_username mumbleserver_userpassword mumbleserver_targetchannel
-
-require 'rubygems'
-require 'bundler/setup'
+# ruby slackleford.rb mumbleserver_host mumbleserver_port mumbleserver_username mumbleserver_userpassword
 
 require 'net/http'
 require 'net/https'
@@ -12,9 +9,10 @@ require 'open-uri'
 require 'json'
 require 'mumble-ruby'
 require 'slack'
+require 'nokogiri'
 
 class MumbleSlack
-  IMGUR_ENABLE = 0 # IMPORTANT (0 = NO, 1 = YES)
+  IMGUR_ENABLE = false # IMPORTANT
   API_URI = URI.parse('https://api.imgur.com')
   API_PUBLIC_KEY = 'Client-ID put client-id here' # IMPORANT
 
@@ -27,16 +25,15 @@ class MumbleSlack
     http
   end
 
-  def initialize
-    @sv_art
-    @sv_alb
-    @sv_tit
+  def send(user, msg, channel = "\#mumble")
+    Slack.chat_postMessage username: user, channel: channel, text: msg, icon_url: "http://wiki.mumble.info/logo.png"
+  end
 
+  def initialize
     @mumbleserver_host = ARGV[0].to_s
     @mumbleserver_port = ARGV[1].to_s
     @mumbleserver_username = ARGV[2].to_s
     @mumbleserver_userpassword = ARGV[3].to_s
-    @mumbleserver_targetchannel = ARGV[4].to_s
 
     @cli = Mumble::Client.new(@mumbleserver_host, @mumbleserver_port) do |conf|
       conf.username = @mumbleserver_username
@@ -50,16 +47,14 @@ class MumbleSlack
 	
     @cli.on_text_message do |msg|
       message = msg.message
+      user = @cli.users[msg.actor].name
       message.gsub!(%r~<br\s*\/?>~, "\n")
       message.gsub!(/&quot;/, '"')
       if @cli.users.has_key?(msg.actor)
         case message
-        when /<a href="(.*)">/i
-          nolinkmsg = message.match(/<a href="(.*)">/i)
-          Slack.chat_postMessage username: "#{@cli.users[msg.actor].name}", channel: "\#mumble", text: "#{nolinkmsg[1]}", icon_url: "http://wiki.mumble.info/logo.png"
         when /base64,(.*)"\/>/i
-          if IMGUR_ENABLE == 1
-            img = message.match(/base64,(.*)"\/>/i)[1]
+          if IMGUR_ENABLE
+            img = $1
             img.gsub!("%2F", '/')
             img.gsub!("%2B", '+')
 
@@ -70,12 +65,19 @@ class MumbleSlack
             request.add_field('Authorization', API_PUBLIC_KEY)
 
             response = imgur_web_client.request(request)
-            Slack.chat_postMessage username: "#{@cli.users[msg.actor].name}", channel: "\#mumble", text: JSON.parse(response.body)['data']['link'], icon_url: "http://wiki.mumble.info/logo.png"
-          elsif IMGUR_ENABLE == 0
-            Slack.chat_postMessage username: "#{@cli.users[msg.actor].name}", channel: "\#mumble", text: "Embedded image cannot be displayed.", icon_url: "http://wiki.mumble.info/logo.png"
+            begin
+              send user, JSON.parse(response.body)['data']['link']
+            rescue
+              send user, "Embedded image cannot be displayed. Probably imgur rate limited."
+            end
+          else
+            send user, "Embedded image cannot be displayed."
           end
         else
-          Slack.chat_postMessage username: "#{@cli.users[msg.actor].name}", channel: "\#mumble", text: "#{message}", icon_url: "http://wiki.mumble.info/logo.png"
+          # parse html and get text from the nodes
+          doc = Nokogiri::HTML message
+          text = doc.text
+          send user, text
         end
       end
     end
@@ -99,7 +101,7 @@ class MumbleSlack
           usermessage << "\t#{channeldata[1].join(", ")}\n"
         end
         begin
-          Slack.chat_postMessage username: "#{@mumbleserver_username}", channel: data['user'], text: "#{usermessage}", icon_url: "http://wiki.mumble.info/logo.png"
+          send @mumbleserver_username, usermessage, data['user']
         rescue
         end
       end
@@ -107,7 +109,6 @@ class MumbleSlack
   end
   def start
     @cli.connect
-    sleep(1)
     @client.start
   end
 end
